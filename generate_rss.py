@@ -1,7 +1,8 @@
-from bs4 import BeautifulSoup
-from feedgen.feed import FeedGenerator
 import os
 from urllib.parse import urljoin
+import requests
+from bs4 import BeautifulSoup
+from feedgen.feed import FeedGenerator
 
 urls = [
     "https://www.aciprensa.com/tags/42/vaticano",
@@ -9,7 +10,7 @@ urls = [
     "https://www.aciprensa.com/tags/14365/papa-leon-xiv",
 ]
 
-# Cabecera para simular un navegador y evitar bloqueos
+# Cabecera para simular un navegador y evitar bloqueos de seguridad
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -35,9 +36,8 @@ for url in urls:
         continue
 
     soup = BeautifulSoup(r.content, "html.parser")
+    articles = soup.select("h2 a")[:5]  # primeros 5 titulares
     
-    # Intenta buscar h2 a o ajusta según la estructura de la web
-    articles = soup.select("h2 a")[:5]  
     if not articles:
         print(f"No se encontraron titulares en {url}")
         continue
@@ -57,6 +57,7 @@ for url in urls:
 
 rss_file_path = "rss.xml"
 
+# Generar rss.xml
 fg.rss_file(rss_file_path)
 print(f"RSS generado en {rss_file_path} con {total_entries} entradas")
 
