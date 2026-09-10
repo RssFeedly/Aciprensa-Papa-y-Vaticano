@@ -1,4 +1,5 @@
 name: Actualizar AciPrensa
+
 on:
   schedule:
     - cron: '0 0 * * *'
@@ -33,5 +34,4 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add rss.xml
-          git commit -m "Actualizar rss.xml automáticamente" || echo "No hay cambios"
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Actualizar rss.xml automáticamente" && git push)
