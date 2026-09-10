@@ -10,7 +10,6 @@ urls = [
     "https://www.aciprensa.com/tags/14365/papa-leon-xiv",
 ]
 
-# Cabecera para simular un navegador y evitar bloqueos de seguridad
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -22,9 +21,9 @@ fg.title("RSS Aci Prensa Papa y Vaticano")
 fg.link(href="https://www.aciprensa.com")
 fg.description("Feed generado automáticamente con GitHub Actions")
 
-print("Iniciando scrap de URLs...")
-
+print("Iniciando scrap de URLs específicas...")
 total_entries = 0
+seen_links = set()
 
 for url in urls:
     print(f"Leyendo {url}")
@@ -36,30 +35,34 @@ for url in urls:
         continue
 
     soup = BeautifulSoup(r.content, "html.parser")
-    articles = soup.select("h2 a")[:5]  # primeros 5 titulares
-    
-    if not articles:
-        print(f"No se encontraron titulares en {url}")
-        continue
+    found_count = 0
 
-    for a in articles:
-        title = a.get_text(strip=True)
+    # Busca cualquier etiqueta <a> que lleve a una noticia y tenga texto de título
+    for a in soup.find_all("a", href=True):
         link = a.get("href")
+        title = a.get_text(strip=True)
         
-        if title and link:
-            # Asegurar que el enlace sea absoluto
+        # Filtro: debe ser una URL de noticia y el texto debe parecerse a un titular (>15 caracteres)
+        if "/noticias/" in link and len(title) > 15:
             full_link = urljoin("https://www.aciprensa.com", link)
             
-            fe = fg.add_entry()
-            fe.title(title)
-            fe.link(href=full_link)
-            total_entries += 1
+            # Evitar duplicados si la misma noticia aparece varias veces en la página
+            if full_link not in seen_links:
+                seen_links.add(full_link)
+                
+                fe = fg.add_entry()
+                fe.title(title)
+                fe.link(href=full_link)
+                total_entries += 1
+                found_count += 1
+                
+                # Limitar a 5 noticias por cada URL específica para mantener el feed limpio
+                if found_count >= 5:
+                    break
 
 rss_file_path = "rss.xml"
-
-# Generar rss.xml
 fg.rss_file(rss_file_path)
-print(f"RSS generado en {rss_file_path} con {total_entries} entradas")
+print(f"RSS generado en {rss_file_path} con {total_entries} entradas únicas")
 
 if os.path.exists(rss_file_path):
     print("rss.xml existe y está listo para commit")
