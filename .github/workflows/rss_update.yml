@@ -1,0 +1,37 @@
+name: Actualizar AciPrensa
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Instalar dependencias
+        run: |
+          pip install requests beautifulsoup4 feedgen
+
+      - name: Ejecutar script
+        run: |
+          python generate_rss.py
+
+      - name: Commit y push de rss.xml si hay cambios
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add rss.xml
+          git commit -m "Actualizar rss.xml automáticamente" || echo "No hay cambios"
+          git push
